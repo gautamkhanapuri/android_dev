@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">OpApp</string>
+    <string name="et_a">Enter a</string>
+    <string name="et_b">Enter b</string>
+    <string name="btn_add">+</string>
+    <string name="btn_subtract">-</string>
+    <string name="btn_multiply">*</string>
+    <string name="btn_divide">/</string>
+    <string name="result">Result</string>
+    <string name="resultis">Result is: %.2f</string>
+</resources>
