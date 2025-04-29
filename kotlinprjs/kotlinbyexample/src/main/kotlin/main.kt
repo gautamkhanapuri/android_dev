@@ -1,11 +1,17 @@
+import kotlinx.coroutines.runBlocking
+import org.gak.kotlinbyexample.*
+import org.gak.otherexample.*
+
 fun main(args: Array<String>) {
     commandLineArgs(args)
     if (args.isNotEmpty()) {
         readInputAndPrint()
     }
+    // KotlinbyExample
     // mainArrays()
     // mainClasses()
     // mainCollection()
+    mainCoroutine()
     // mainDataClasses()
     // mainEnum()
     // mainExtensions()
@@ -17,11 +23,34 @@ fun main(args: Array<String>) {
     // mainIf()
     // mainLambda()
     // mainLoops()
-//     mainObject()
+    // mainObject()
+    // mainScopeFunctions()
     // mainSealedClasses()
     // mainStream()
     // mainVariables()
-    //    mainWhen()
+    // mainWhen()
+
+    // OtherExample
+    // mainGroupingBy()
+    // mainCoroutineCancel()
+    // mainCoroutineCancellableException()
+    // mainCoroutineCancellableComputation()
+    // mainCoroutineCancellableIsActive()
+    // mainCoroutineCancellableCleanup()
+    // mainCoroutineCancellableCleanupWithContext()
+    // mainCoroutineCancellableTimeout()
+    // mainCoroutineCancellableTimeoutNull()
+    // mainCoroutineSequential()
+    // mainCoroutineAsync()
+    // mainCoroutineAsyncLazy()
+    // mainCoroutineAsyncConcurrent()
+    // mainCoroutineAsyncConcurrentCancellation()
+    // mainSequence()
+    // mainSuspend()
+    // mainFlow()
+    // mainFlowCollect()
+    // mainFlowCancel()
+    // mainFlowBuilder()
 }
 
 fun commandLineArgs(args: Array<String>) {

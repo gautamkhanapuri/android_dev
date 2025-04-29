@@ -1,7 +1,10 @@
 package org.gak.kotlinbyexample
 
+// Kotlin's ability to infer the type is called type inference
 // In Kotlin, a variable is decalred starting with a keyword, val or var,
 // followed by the name of the variable.
+// Declare all variables as read-only (val) by default.
+// Declare mutable variables (var) only if necessary
 
 // val - declares variables that are assigned a value only once.
 //       These are immutable, read-only local variables that can’t be
@@ -17,6 +20,13 @@ package org.gak.kotlinbyexample
 // Variables -  variables can be used only after initializing them.
 //              Either initialize a variable at the moment of declaration
 //         OR   Declare a variable first (Data type is mandatory) and initialize it later.
+// Kotlin has the following basic types:
+//  Integers          ---> Byte, Short, Int, Long
+//  Unsigned Integers ---> UByte, UShort, UInt, ULong
+//  Floating Numbers  ---> Float, Double
+//  Booleans          ---> Boolean(true or false)
+//  Characters        ---> Char
+//  Strings           ---> String
 
 // Global variables
 val PI = 3.14  // Immutable
@@ -50,13 +60,12 @@ fun mainVariables() {
     strTemplates()
 }
 
-//val maxOfAB: (a:Int,b:Int)->Int = {
-//    if (a>b) {
-//        return a
-//    } else {
-//        return b
-//    }
-//}
+
+// String Templates help to print the contents of variables to standard output.
+// Template expressions are used to access data stored in variables and other objects,
+//  and convert them into strings. A string value is a sequence of characters in double quotes ".
+// Template expressions always start with a dollar sign $. To evaluate a piece of code 
+//  in a template expression, place the code within curly braces {} after the dollar sign $.
 
 fun strTemplates() {
     println("**** String Templates ***")

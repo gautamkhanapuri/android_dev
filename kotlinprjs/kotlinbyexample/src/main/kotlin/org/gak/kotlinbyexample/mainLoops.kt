@@ -1,4 +1,12 @@
 package org.gak.kotlinbyexample
+import kotlinx.coroutines.*
+
+// 1..4 is equivalent to 1, 2, 3, 4.
+// 1..<4 is equivalent to 1, 2, 3
+// 4 downTo 1 is equivalent to 4, 3, 2, 1
+// 1..5 step 2 is equivalent to 1, 3, 5.
+// 'a'..'d' is equivalent to 'a', 'b', 'c', 'd'
+// 'z' downTo 's' step 2 is equivalent to 'z', 'x', 'v', 't'
 
 fun mainLoops() {
     println("**** Loops ***")
@@ -66,4 +74,16 @@ fun mainLoops() {
         print("$xy, ")
     }
     println()
+
+    repeat(5) { i ->
+        println("Repeat loop iteration: $i")
+        Thread.sleep(500L)
+    }
+
+    println("*".repeat(3))
+    operator fun String.times(n: Int) = this.repeat(n)
+    println("*" * 5)
+    println("*".times(10))
 }
+
+

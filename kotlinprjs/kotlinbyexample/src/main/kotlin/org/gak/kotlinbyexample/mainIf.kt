@@ -1,5 +1,10 @@
 package org.gak.kotlinbyexample
 
+// 'when' construct is recommended over 'if' because it:
+//   Makes code easier to read.
+//   Makes it easier to add another branch.
+//   Leads to fewer mistakes in the code.
+
 fun mainIf() {
     println("**** If, Range ***")
     val x1 = 10

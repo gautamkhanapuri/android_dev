@@ -1,5 +1,9 @@
 package org.gak.kotlinbyexample
 
+// including parameter names does makes code easier to read. This is called using named arguments
+
+// Function not returning a useful value then its return type is Unit.
+//  Unit is a type with only one value – Unit. Unit is returned explicitly in your function body.
 typealias OP = (Int, Int) ->Int
 
 fun mainFunction() {
@@ -74,9 +78,23 @@ fun mainFunction() {
 
     strLength(neverNull)                                    // 8
     // strLength(nullable) - Compilation error
+    println(lengthString(null))
 
     mainVararg()
 }
+
+// To safely access properties of an object containing a null value, safe call operator ?. is used.
+//  The safe call operator returns null if either the object or one of its accessed properties is null.
+//  This is useful to avoid the presence of null values triggering errors in your code.
+// Safe calls can be chained so that if any property of an object contains a null value, then null is 
+//  returned without an error being thrown. 
+//  person.company?.address?.country
+// A default value to return if a null value is detected by using the Elvis operator ?:
+//  Write on the left-hand side of the Elvis operator what should be checked for a null value.
+//  Write on the right-hand side of the Elvis operator what should be returned if a null value is detected.
+//  val nullString: String? = null
+//  println(nullString?.length ?: 0)
+fun lengthString(maybeString: String?): Int? = maybeString?.length
 
 // strLength parameter cannot be null.
 fun strLength(notNull: String): Int {                   // 7
