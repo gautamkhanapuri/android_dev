@@ -1,3 +1,5 @@
+package collections
+
 import java.util.*
 
 fun mainConstructingElements() {
@@ -56,7 +58,7 @@ fun initializerForLists() {
 }
 
 fun copying() {
-//    Collection copying functions from the standard library create shallow copy collections with references to the same elements.
+//    Collection collections.copying functions from the standard library create shallow copy collections with references to the same elements.
     val alice: MutableList<String> = mutableListOf("one", "two", "three")
     val sourceList: List<String> = alice.toList()
     alice.add("four")

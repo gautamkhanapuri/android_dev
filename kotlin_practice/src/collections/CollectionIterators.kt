@@ -1,3 +1,5 @@
+package collections
+
 fun mainIterators() {
 
 }
@@ -45,4 +47,19 @@ fun removingFromMutableIterators() {
     numbersIterator.next()
     numbersIterator.remove()
     //    println("After removal: $numbers")
+    // After removal: [two, three, four]
+}
+
+fun addingToMutableIterators() {
+    val numbers = mutableListOf("one", "four", "four")
+    val mutableListIterator = numbers.listIterator()
+
+    mutableListIterator.next()
+    mutableListIterator.add("two")
+    println(numbers)
+// [one, two, four, four]
+    mutableListIterator.next()
+    mutableListIterator.set("three")
+    println(numbers)
+// [one, two, three, four]
 }

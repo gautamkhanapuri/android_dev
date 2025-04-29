@@ -1,5 +1,3 @@
-import org.gak.kotlinbyexample.*
-
 fun main(args: Array<String>) {
     commandLineArgs(args)
     if (args.isNotEmpty()) {
@@ -19,11 +17,11 @@ fun main(args: Array<String>) {
     // mainIf()
     // mainLambda()
     // mainLoops()
-    // mainObject()
+//     mainObject()
     // mainSealedClasses()
     // mainStream()
     // mainVariables()
-    mainWhen()
+    //    mainWhen()
 }
 
 fun commandLineArgs(args: Array<String>) {

@@ -1,4 +1,4 @@
-
+package collections
 
 fun main() {
     val aList: List<String> = listOf("A", "B", "C")
