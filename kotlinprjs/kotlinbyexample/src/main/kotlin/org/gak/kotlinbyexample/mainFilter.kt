@@ -48,6 +48,16 @@ fun mainFilter() {
     val NoneGreater6 = numbers.none { it > 6 }
     println("None function (it > 6) to a list ==> $NoneGreater6")
 
+    val words = listOf("Lets", "find", "something", "in", "collection", "somehow")  // 1
+
+    val first = words.find { it.startsWith("some") } // 2
+    println("find the first words starting 'some' ==> $first")
+    val last = words.findLast { it.startsWith("some") }
+    println("findLast the last words starting 'some' ==> $first")
+
+    val nothing = words.find { it.contains("nothing") }
+    println("find with no matching for 'contains' ==> $nothing")
+
     val totalCount = numbers.count()                     // 2
     println("Count items in a list ==> $totalCount")
     val evenCount = numbers.count { it % 2 == 0 }
@@ -88,4 +98,37 @@ fun mainFilter() {
     map1["x"] = null
     println("Map get with null value for a key ==> ${map.getOrElse("x") { 1 }}")       // 3
 
+    mainAssociateAndGroupBy()
+    mainFlatMap()
+}
+
+data class PersonLocal(val name: String, val city: String, val phone: String) // 1
+
+
+fun mainAssociateAndGroupBy() {
+
+    val people = listOf(                                                     // 2
+        PersonLocal("John", "Boston", "+1-888-123456"),
+        PersonLocal("Sarah", "Munich", "+49-777-789123"),
+        PersonLocal("Svyatoslav", "Saint-Petersburg", "+7-999-456789"),
+        PersonLocal("Vasilisa", "Saint-Petersburg", "+7-999-123456"))
+
+    val phoneBook = people.associateBy { it.phone }                          // 3
+    println("PhoneBook ==> $phoneBook")
+    val cityBook = people.associateBy(PersonLocal::phone, PersonLocal::city)           // 4
+    println("CityBook ==> $cityBook")
+    val peopleCities = people.groupBy(PersonLocal::city, PersonLocal::name)            // 5
+    println("People and Cities ==> $peopleCities")
+    val lastPersonCity = people.associateBy(PersonLocal::city, PersonLocal::name)      // 6
+    println("Last Person City ==> $lastPersonCity")
+}
+
+fun mainFlatMap() {
+    val fruitsBag = listOf("apple","orange","banana","grapes")  // 1
+    val clothesBag = listOf("shirts","pants","jeans")           // 2
+    val cart = listOf(fruitsBag, clothesBag)                    // 3
+    val mapBag = cart.map { it } // 4
+    println("Map of Bag ==> $mapBag")
+    val flatMapBag = cart.flatMap { it }
+    println("Flattened Map of Bag ==> $flatMapBag")
 }
