@@ -56,7 +56,12 @@ dependencies {
     // Room
     implementation (libs.androidx.room.runtime)
     implementation (libs.androidx.room.ktx)
+    implementation(libs.androidx.runtime.livedata)
     ksp(libs.androidx.room.compiler)
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -64,4 +69,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Jetpack Navigation Compose
+    implementation(libs.androidx.navigation.compose)
 }
