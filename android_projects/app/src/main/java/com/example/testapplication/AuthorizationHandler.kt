@@ -1,5 +1,6 @@
 package com.example.testapplication
 
+import android.util.Log
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,8 +29,10 @@ class AuthHandler(
         if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
             == BiometricManager.BIOMETRIC_SUCCESS
         ) {
+            Log.d("FORWARD", "Biiometric Path")
             showBiometricPrompt()
         } else {
+            Log.d("FORWARD", "Pin Auth")
             fallBackToPin()
         }
     }

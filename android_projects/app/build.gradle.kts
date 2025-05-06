@@ -42,6 +42,19 @@ android {
 
 dependencies {
 
+    // Retrofit
+    implementation(libs.retrofit)
+    // gson converter
+    implementation(libs.converter.gson)
+    // Retrofit with Scalar Converter
+    implementation(libs.retrofit2.converter.scalars)
+
+    implementation(libs.lifecycle.service)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
