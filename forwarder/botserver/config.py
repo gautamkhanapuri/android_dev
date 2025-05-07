@@ -13,8 +13,6 @@ def get_db_uri():
 def get_bot_token():
   """ Return bot token """
   tkn = os.environ['BOTTOKEN'] if 'BOTTOKEN' in os.environ else None
-  if tkn is None:
-    tkn = '7011174445:AAEUDxfJX5jIerZVieBr9WJWnxysTmktebk'
   return tkn
 
 def get_log_path():
