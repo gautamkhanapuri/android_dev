@@ -89,17 +89,17 @@ import kotlinx.coroutines.launch
 
 class OverviewPage : ComponentActivity() {
 
-    lateinit var database: TestAppDatabase
-    lateinit var overviewPageModel: OverviewPageModel
+    private lateinit var database: TestAppDatabase
+    private lateinit var overviewPageModel: OverviewPageModel
     lateinit var forwardPreferences: ForwardPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = Room.databaseBuilder(
-                applicationContext,
-                TestAppDatabase::class.java,
-                "testAppDb"
-            ).fallbackToDestructiveMigration(false).build()
+//        database = Room.databaseBuilder(
+//                applicationContext,
+//                TestAppDatabase::class.java,
+//                "testAppDb"
+//            ).fallbackToDestructiveMigration(false).build()
 
         forwardPreferences = ForwardPreferences(applicationContext)
         val telegramUserApi =
@@ -108,8 +108,7 @@ class OverviewPage : ComponentActivity() {
         val telegramRepository =
             TelegramRepository(telegramUserApi, applicationContext)
         overviewPageModel =
-            ViewModelProvider(this, OverviewPageModelFactory(telegramRepository))
-                .get(OverviewPageModel::class.java)
+            ViewModelProvider(this, OverviewPageModelFactory(telegramRepository))[OverviewPageModel::class.java]
 
 //        database = Room.databaseBuilder(
 //            applicationContext,
@@ -780,7 +779,7 @@ class ForwardViewModel(
 
     private val TAG: String = "ForwardVM"
     private val _forwards: MutableStateFlow<List<Forwards>> =
-        MutableStateFlow<List<Forwards>>(emptyList())
+        MutableStateFlow(emptyList())
     val forwards = _forwards.asStateFlow()
 
     val validUserUiState: StateFlow<ValidUserUiState> = telegramRepository.validUserUiState

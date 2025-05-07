@@ -88,7 +88,7 @@ class TelegramRepository(private val telegramUserApi: TelegramUserApi,
         }
     }
 
-    suspend fun sendMessage(sendMessageBody: SendMessageBody){
+    suspend fun sendMessage(sendMessageBody: SendMessageBody) {
         try {
             val sendMessageBody = SendMessageBody(
                 message = sendMessageBody.message,

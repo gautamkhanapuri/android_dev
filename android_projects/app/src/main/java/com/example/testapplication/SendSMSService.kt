@@ -49,7 +49,7 @@ class SendSMSService: LifecycleService() {
                                         val updateCfg = Forwards(
                                             id = fwdCfg.id,
                                             message = fwdCfg.message,
-                                            fromPhone = fwdCfg.fromPhone,
+                                            sender = fwdCfg.sender,
                                             email = fwdCfg.email,
                                             telegram = fwdCfg.telegram,
                                             isActive = fwdCfg.isActive,

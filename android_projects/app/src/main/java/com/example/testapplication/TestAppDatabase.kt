@@ -5,12 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Forwards::class, SentMessages::class], version = 3)
+@Database(entities = [Forwards::class, ForwardMessage::class], version = 4)
 abstract class TestAppDatabase : RoomDatabase() {
 
     abstract fun forwardDao(): ForwardDao
-    abstract fun sentMessagesDao(): SentMessagesDao
-
     abstract fun forwardMessageDao(): ForwardMessageDao
 
     companion object {
@@ -23,12 +21,11 @@ abstract class TestAppDatabase : RoomDatabase() {
                 synchronized(this){
                     INSTANCE = Room.databaseBuilder(
                         context.applicationContext, TestAppDatabase::class.java, "forwardDB")
+                        .fallbackToDestructiveMigration(false)
                         .build()
                 }
-
             }
             return INSTANCE!!
         }
     }
-
 }
