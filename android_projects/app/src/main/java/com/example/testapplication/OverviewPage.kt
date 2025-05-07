@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.util.Patterns
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,18 +18,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,50 +56,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.room.Room
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class OverviewPage : ComponentActivity() {
     lateinit var database: TestAppDatabase
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = Room.databaseBuilder(
-            applicationContext,
-            TestAppDatabase::class.java,
-            "testAppDb"
-        ).build()
+                applicationContext,
+                TestAppDatabase::class.java,
+                "testAppDb"
+            ).fallbackToDestructiveMigration(false).build()
         val dao = database.forwardDao()
         setContent {
             val viewModel: ForwardViewModel = ViewModelProvider(this,
@@ -191,6 +190,18 @@ fun OverviewScreen(
             }
         }
     ) { paddingValues ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "All Forward Configurations",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center
+            )
+        }
         LazyColumn(modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
@@ -220,25 +231,27 @@ fun CreateForwardScreen(
     onSave: (Forwards) -> Unit,
 ) {
     var message by remember { mutableStateOf("") }
+    var senderFrom by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var telegram by remember { mutableStateOf("") }
 
     var isMessageValid by remember { mutableStateOf(true) }
     var isEmailValid by remember { mutableStateOf(true) }
     var isTelegramValid by remember { mutableStateOf(true) }
-
-    val context = LocalContext.current
+    var selectedMode by remember { mutableStateOf("Email") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             "Create a Forward Configuration",
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
         // Message Field
         InputFieldWithHelp(
@@ -252,7 +265,54 @@ fun CreateForwardScreen(
             isValid = isMessageValid
         )
 
-        // Forward message field
+        // From Field
+        InputFieldWithHelp(
+            value = senderFrom,
+            onValueChange = {senderFrom = it},
+            label = "From",
+            helpText = "Enter sender information (if any).",
+            isValid = true
+        )
+
+        Text("Select Forward Mode:", fontWeight = FontWeight.SemiBold)
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Email Option
+                RadioButton(
+                    selected = selectedMode == "Email",
+                    onClick = {selectedMode = "Email"}
+                )
+                Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = "Email option",
+                    tint = if (selectedMode == "Email") MaterialTheme.colorScheme.primary else
+                        Color.Gray
+                )
+                Text("Email")
+            }
+            // Telegram Option
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = selectedMode == "Telegram",
+                    onClick = { selectedMode = "Telegram" }
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Telegram",
+                    tint = if (selectedMode == "Telegram") MaterialTheme.colorScheme.primary
+                    else Color.Gray
+                )
+                Text("Telegram")
+            }
+        }
+
+        // Email field
         InputFieldWithHelp(
             value = email,
             onValueChange = {
@@ -261,7 +321,8 @@ fun CreateForwardScreen(
             },
             label = "Email",
             helpText = "Enter a valid email (e.g., name@example.com).",
-            isValid = isMessageValid
+            isValid = isEmailValid,
+            enabled = selectedMode == "Email"
         )
 
         // Telegram ID Field
@@ -273,7 +334,8 @@ fun CreateForwardScreen(
             },
             label = "Telegram",
             helpText = "Enter a Telegram ID starting with '@'.",
-            isValid = isTelegramValid
+            isValid = isTelegramValid,
+            enabled = selectedMode == "Telegram"
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -284,22 +346,62 @@ fun CreateForwardScreen(
         ) {
             Button(
                 onClick = {
-                    if (isMessageValid && isEmailValid && isTelegramValid) {
-                        val newForward = Forwards(
-                            id = 0,
-                            message = message.trim(),
-                            email = email.trim(),
-                            telegram = telegram.trim(),
-                            isActive = true,
-                            numberOfMessagesForwarded = 0
-                        )
-                        onSave(newForward)
+                    if (isMessageValid) {
+                        if (selectedMode == "Email") {
+                            if (isEmailValid) {
+                                onSave(
+                                    Forwards(
+                                        id = 0,
+                                        message = message.trim(),
+                                        sender = senderFrom,
+                                        email = email.trim(),
+                                        telegram = "",
+                                        isActive = true,
+                                        numberOfMessagesForwarded = 0
+                                    )
+                                )
+                            } else {
+                                isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                            }
+                        } else if (selectedMode == "Telegram") {
+                            if (isTelegramValid) {
+                                onSave(
+                                    Forwards(
+                                        id = 0,
+                                        message = message.trim(),
+                                        sender = senderFrom,
+                                        email = "",
+                                        telegram = telegram.trim(),
+                                        isActive = true,
+                                        numberOfMessagesForwarded = 0
+                                    )
+                                )
+                            } else {
+                                isTelegramValid = telegram.matches(Regex("^@[a-zA-Z0-9_]{5,}$"))
+                            }
+                        }
                     } else {
                         isMessageValid = message.isNotBlank()
                         isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
                         isTelegramValid = telegram.matches(Regex("^@[a-zA-Z0-9_]{5,}$"))
                     }
                 }
+//                    if (isMessageValid && isEmailValid && isTelegramValid) {
+//                        val newForward = Forwards(
+//                            id = 0,
+//                            message = message.trim(),
+//                            sender = senderFrom,
+//                            email = email.trim(),
+//                            telegram = telegram.trim(),
+//                            isActive = true,
+//                            numberOfMessagesForwarded = 0
+//                        )
+//                        onSave(newForward)
+//                    } else {
+//                        isMessageValid = message.isNotBlank()
+//                        isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+//                        isTelegramValid = telegram.matches(Regex("^@[a-zA-Z0-9_]{5,}$"))
+//                    }
             ) {
                 Text("Save")
             }
@@ -322,6 +424,10 @@ fun EditForwardScreen(
     var isEmailValid by remember { mutableStateOf(true) }
     var isTelegramValid by remember { mutableStateOf(true) }
 
+    var selectedMode by remember {
+        mutableStateOf(if (forward.email.isNotBlank()) "Email" else "Telegram")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -343,6 +449,38 @@ fun EditForwardScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        // Non-editable From Field
+        OutlinedTextField(
+            value = forward.sender,
+            onValueChange = {},
+            label = { Text("From") },
+            enabled = false,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Communication Method Selector
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = selectedMode == "Email",
+                onClick = { selectedMode = "Email" }
+            )
+            Icon(
+                Icons.Default.Email,
+                contentDescription = "Email",
+                tint = if (selectedMode == "Email") Color(0xFF4285F4) else Color.Gray
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            RadioButton(
+                selected = selectedMode == "Telegram",
+                onClick = { selectedMode = "Telegram" }
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Send, // use your own icon
+                contentDescription = "Telegram",
+                tint = if (selectedMode == "Telegram") Color(0xFF0088CC) else Color.Gray
+            )
+        }
+
         // Editable Email Field
         InputFieldWithHelp(
             value = email,
@@ -352,7 +490,8 @@ fun EditForwardScreen(
             },
             label = "Email",
             helpText = "Enter a valid email (e.g., name@example.com).",
-            isValid = isEmailValid
+            isValid = isEmailValid,
+            enabled = selectedMode == "Email"
         )
 
         // Editable Telegram ID Field
@@ -364,7 +503,8 @@ fun EditForwardScreen(
             },
             label = "Telegram",
             helpText = "Enter a Telegram ID starting with '@'.",
-            isValid = isTelegramValid
+            isValid = isTelegramValid,
+            enabled = selectedMode == "Telegram"
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -374,47 +514,33 @@ fun EditForwardScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                shape = CircleShape,
-                border = BorderStroke(1.dp, Color.Green),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Green,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color.LightGray,
-                    disabledContentColor = Color.DarkGray
-                ),
                 onClick = {
-                    if (isEmailValid && isTelegramValid) {
+                    val isValid = when (selectedMode) {
+                        "Email" -> {
+                            isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                            isEmailValid
+                        }
+                        "Telegram" -> {
+                            isTelegramValid = telegram.matches(Regex("^@[a-zA-Z0-9_]{5,}$"))
+                            isTelegramValid
+                        }
+                        else -> false
+                    }
+
+                    if (isValid) {
                         onUpdate(
                             forward.copy(
-                                email = email.trim(),
-                                telegram = telegram.trim()
+                                email = if (selectedMode == "Email") email.trim() else "",
+                                telegram = if (selectedMode == "Telegram") telegram.trim() else ""
                             )
                         )
                     }
                 }
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "Confirm Edit",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
-                )
+                Text("Save")
             }
-            OutlinedButton(
-                border = BorderStroke(1.dp, Color.Red),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color.LightGray,
-                    disabledContentColor = Color.DarkGray
-                ),
-                onClick = onCancel) {
-                Icon(
-                    imageVector = Icons.Filled.Cancel,
-                    contentDescription = "Cancel",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.White
-                )
+            OutlinedButton(onClick = onCancel) {
+                Text("Cancel")
             }
         }
     }
@@ -426,7 +552,8 @@ fun InputFieldWithHelp(
     onValueChange: (String) -> Unit,
     label: String,
     helpText: String,
-    isValid: Boolean
+    isValid: Boolean,
+    enabled: Boolean = true
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -436,16 +563,16 @@ fun InputFieldWithHelp(
             onValueChange = onValueChange,
             label = {Text(label)},
             isError =  !isValid,
-            modifier = Modifier
-                .weight(1f)
-                .border(
-                    BorderStroke(
-                        1.dp,
-                        if (!isValid) Color.Red else MaterialTheme.colorScheme.primary
-                    ),
-                    shape = MaterialTheme.shapes.medium
-                ),
-            singleLine = true
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = if (!isValid) Color.Red else MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = if (!isValid) Color.Red else MaterialTheme.colorScheme.primary,
+                errorBorderColor = Color.Red,
+                errorLabelColor = Color.Red
+            ),
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            enabled = enabled
         )
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -500,28 +627,82 @@ fun ForwardCard(
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 14.sp
             )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "From: ${forward.sender.ifBlank { "Not provided" }}",
+                color = if (forward.sender.isBlank()) Color.Gray else Color.Unspecified
+            )
+
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Email: ${forward.email}")
-            Text("Telegram: ${forward.telegram}")
+
+            // Email
+            Text(
+                text = "Email: ${forward.email.ifBlank { "Not provided" }}",
+                color = if (forward.email.isBlank()) Color.Gray else Color.Unspecified
+            )
+
+            // Telegram
+            Text(
+                text = "Telegram: ${forward.telegram.ifBlank { "Not provided" }}",
+                color = if (forward.telegram.isBlank()) Color.Gray else Color.Unspecified
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+//                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.weight(1f)
+                ) {
                     IconButton(onClick = { onEdit(forward)}) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit Button")
                     }
-                    IconButton(onClick = { onDelete(forward) }) {
+                    var showDeleteDialog by remember { mutableStateOf(false) }
+                    IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
+                    if (showDeleteDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteDialog = false },
+                            title = { Text("Confirm Deletion") },
+                            text = { Text(
+                                "Are you sure you want to delete this forward configuration?")
+                                   },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    onDelete(forward)
+                                    showDeleteDialog = false
+                                }) {
+                                    Text("Yes")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDeleteDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
+                    Switch(
+                        checked = forward.isActive,
+                        onCheckedChange = {
+                            onToggle(forward.copy(isActive = it))
+                        }
+                    )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Switch(checked = forward.isActive, onCheckedChange = {
-                        onToggle(forward.copy(isActive = it))
-                    })
-                    Text("${forward.numberOfMessagesForwarded}")
+                Row(modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "${forward.numberOfMessagesForwarded}",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -577,6 +758,7 @@ fun ForwardCardPreview() {
         forward = Forwards(
             id = 1,
             message = "Kindly note that the meeting is rescheduled.",
+            sender = "Khoury College",
             email = "xyz@gmail.com",
             telegram = "@example",
             isActive = true,

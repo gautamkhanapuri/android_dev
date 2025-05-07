@@ -14,6 +14,7 @@ data class Forwards(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val message: String,
+    val sender: String,
     val email: String,
     val telegram: String,
     val isActive: Boolean,
