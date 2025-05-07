@@ -12,9 +12,9 @@ import androidx.room.Update
 @Entity(tableName = "forwards")
 data class Forwards(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    val id: Long = 0,
     val message: String,
-    val sender: String,
+    val fromPhone: String = "",
     val email: String,
     val telegram: String,
     val isActive: Boolean,
@@ -34,4 +34,7 @@ interface ForwardDao {
 
     @Query("SELECT * FROM forwards")
     fun getAllMessages(): LiveData<List<Forwards>>
+
+    @Query("SELECT * FROM forwards")
+    suspend fun getForwards(): List<Forwards>
 }

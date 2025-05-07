@@ -1,6 +1,6 @@
 package com.example.testapplication
 
-import android.app.Fragment
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -38,14 +38,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 class LandingPageActivity : AppCompatActivity() {
+
+    private val requestPermissionCode = 103
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        requestPermissions()
+
         setContent {
             LandingPage {
                 startActivity(Intent(this, OverviewPage::class.java))
                 finish()
             }
         }
+    }
+
+    private fun requestPermissions() {
+        requestPermissions(
+            arrayOf(
+                Manifest.permission.READ_SMS,
+                Manifest.permission.RECEIVE_SMS,
+            ), requestPermissionCode
+        )
     }
 }
 

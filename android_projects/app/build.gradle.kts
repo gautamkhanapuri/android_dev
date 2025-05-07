@@ -42,6 +42,10 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.converter.scalars)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

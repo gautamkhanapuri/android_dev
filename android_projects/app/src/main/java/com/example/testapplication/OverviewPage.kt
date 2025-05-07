@@ -1,10 +1,15 @@
 package com.example.testapplication
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.util.Patterns
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,17 +20,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -70,11 +83,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class OverviewPage : ComponentActivity() {
+
     lateinit var database: TestAppDatabase
+    lateinit var overviewPageModel: OverviewPageModel
+    lateinit var forwardPreferences: ForwardPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = Room.databaseBuilder(
@@ -82,10 +100,35 @@ class OverviewPage : ComponentActivity() {
                 TestAppDatabase::class.java,
                 "testAppDb"
             ).fallbackToDestructiveMigration(false).build()
+
+        forwardPreferences = ForwardPreferences(applicationContext)
+        val telegramUserApi =
+            RetrofitHelper.getInstance(AppConstants.SERVERURL)
+                .create<TelegramUserApi>(TelegramUserApi::class.java)
+        val telegramRepository =
+            TelegramRepository(telegramUserApi, applicationContext)
+        overviewPageModel =
+            ViewModelProvider(this, OverviewPageModelFactory(telegramRepository))
+                .get(OverviewPageModel::class.java)
+
+//        database = Room.databaseBuilder(
+//            applicationContext,
+//            TestAppDatabase::class.java,
+//            "testAppDb"
+//        ).build()
+
+        database = TestAppDatabase.getDatabase(applicationContext)
         val dao = database.forwardDao()
+
         setContent {
-            val viewModel: ForwardViewModel = ViewModelProvider(this,
-                ForwardViewModelFactory(dao))[ForwardViewModel::class.java]
+            val viewModel: ForwardViewModel =
+                ViewModelProvider(
+                    this,
+                    ForwardViewModelFactory(
+                        dao,
+                        telegramRepository
+                    )
+                )[ForwardViewModel::class.java]
             val navController = rememberNavController()
             val snackBarHostState = remember { SnackbarHostState() }
             Scaffold(
@@ -95,9 +138,17 @@ class OverviewPage : ComponentActivity() {
                     navController = navController,
                     startDestination = "overview",
                     modifier = Modifier.padding(innerPadding)
-                ) {
+                )   {
                     composable("overview") {
                         OverviewScreen(
+                            overviewPageModel,
+                            context = applicationContext,
+                            snackBarHostState = snackBarHostState,
+                            navController = navController
+                        )
+                    }
+                    composable("forward") {
+                        ForwardScreen(
                             viewModel,
                             onAddClick = {
                                 navController.navigate("create")
@@ -108,6 +159,7 @@ class OverviewPage : ComponentActivity() {
                     }
                     composable("create") {
                         CreateForwardScreen(
+                            viewModel,
                             onCancel = {navController.popBackStack()},
                             onSave = {
                                 viewModel.add(it)
@@ -119,10 +171,11 @@ class OverviewPage : ComponentActivity() {
                         )
                     }
                     composable("edit/{id}") { backStackEntry ->
-                        val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
+                        val id = backStackEntry.arguments?.getString("id")?.toLongOrNull()
                         val forward = viewModel.forwards.collectAsState().value.find {it.id == id}
                         forward?.let {
                             EditForwardScreen(
+                                viewModel,
                                 forward = it,
                                 onCancel = {navController.popBackStack()},
                                 onUpdate = {updated ->
@@ -142,7 +195,7 @@ class OverviewPage : ComponentActivity() {
 }
 
 @Composable
-fun OverviewScreen(
+fun ForwardScreen(
     viewModel: ForwardViewModel,
     onAddClick: () -> Unit,
     snackBarHostState: SnackbarHostState,
@@ -227,6 +280,7 @@ fun OverviewScreen(
 
 @Composable
 fun CreateForwardScreen(
+    viewModel: ForwardViewModel,
     onCancel: () -> Unit,
     onSave: (Forwards) -> Unit,
 ) {
@@ -240,6 +294,10 @@ fun CreateForwardScreen(
     var isTelegramValid by remember { mutableStateOf(true) }
     var selectedMode by remember { mutableStateOf("Email") }
 
+    val validUserUiState by viewModel.validUserUiState.collectAsState()
+    viewModel.validateUser(telegram, false)
+
+    // val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -331,10 +389,11 @@ fun CreateForwardScreen(
             onValueChange = {
                 telegram = it
                 isTelegramValid = telegram.matches(Regex("^@[a-zA-Z0-9_]{5,}$"))
+                viewModel.validateUser(telegram, false)
             },
             label = "Telegram",
             helpText = "Enter a Telegram ID starting with '@'.",
-            isValid = isTelegramValid,
+            isValid = isTelegramValid && validUserUiState.validUser,
             enabled = selectedMode == "Telegram"
         )
 
@@ -414,6 +473,7 @@ fun CreateForwardScreen(
 
 @Composable
 fun EditForwardScreen(
+    viewModel: ForwardViewModel,
     forward: Forwards,
     onCancel: () -> Unit,
     onUpdate: (Forwards) -> Unit
@@ -427,6 +487,9 @@ fun EditForwardScreen(
     var selectedMode by remember {
         mutableStateOf(if (forward.email.isNotBlank()) "Email" else "Telegram")
     }
+
+    val validUserUiState by viewModel.validUserUiState.collectAsState()
+    viewModel.validateUser(telegram, false)
 
     Column(
         modifier = Modifier
@@ -500,10 +563,11 @@ fun EditForwardScreen(
             onValueChange = {
                 telegram = it
                 isTelegramValid = it.matches(Regex("^@[a-zA-Z0-9_]{5,}$"))
+                viewModel.validateUser(telegram, false)
             },
             label = "Telegram",
             helpText = "Enter a Telegram ID starting with '@'.",
-            isValid = isTelegramValid,
+            isValid = isTelegramValid && validUserUiState.validUser,
             enabled = selectedMode == "Telegram"
         )
 
@@ -709,12 +773,20 @@ fun ForwardCard(
     }
 }
 
-class ForwardViewModel(private val dao: ForwardDao) : ViewModel() {
+class ForwardViewModel(
+    private val dao: ForwardDao,
+    private val telegramRepository: TelegramRepository
+) : ViewModel() {
+
+    private val TAG: String = "ForwardVM"
     private val _forwards: MutableStateFlow<List<Forwards>> =
         MutableStateFlow<List<Forwards>>(emptyList())
     val forwards = _forwards.asStateFlow()
 
+    val validUserUiState: StateFlow<ValidUserUiState> = telegramRepository.validUserUiState
+
     init {
+        // This also needs to be a coroutine.
         dao.getAllMessages().observeForever {
             _forwards.value = it
         }
@@ -722,32 +794,55 @@ class ForwardViewModel(private val dao: ForwardDao) : ViewModel() {
 
     fun toggleActive(updated: Forwards) {
         viewModelScope.launch {
+            Log.d(TAG, "ForwardViewModel Coroutine toggleActive dao - Started")
             dao.updateForward(updated)
         }
     }
 
     fun delete(item: Forwards) {
         viewModelScope.launch {
+            Log.d(TAG, "ForwardViewModel Coroutine delete dao - Started")
             dao.deleteMessage(item)
         }
     }
 
     fun add(forward: Forwards) {
         viewModelScope.launch {
+            Log.d(TAG, "ForwardViewModel Coroutine add dao - Started")
             dao.insertForward(forward)
         }
     }
 
     fun update(updated: Forwards) {
         viewModelScope.launch {
+            Log.d(TAG, "ForwardViewModel Coroutine update dao - Started")
             dao.updateForward(updated)
         }
     }
+
+    fun validateUser(username: String, email: Boolean) {
+        viewModelScope.launch {
+            Log.d(TAG, "ForwardViewModel Coroutine validateTelegramUser - Started")
+            telegramRepository.validateUser(username, email)
+        }
+    }
+
+    fun sendMessage(sendMessageBody: SendMessageBody) {
+        viewModelScope.launch {
+            Log.d(TAG, "ForwardViewModel Coroutine sendMessage - Started")
+            telegramRepository.sendMessage(sendMessageBody)
+        }
+    }
+
+
 }
 
-class ForwardViewModelFactory(private val dao: ForwardDao) : ViewModelProvider.Factory {
+class ForwardViewModelFactory(
+    private val dao: ForwardDao,
+    private val telegramRepository: TelegramRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel > create(modelClass: Class<T>): T {
-        return ForwardViewModel(dao) as T
+        return ForwardViewModel(dao, telegramRepository) as T
     }
 }
 
@@ -768,4 +863,135 @@ fun ForwardCardPreview() {
         onDelete = {},
         onToggle = {}
     )
+}
+
+@Composable
+fun OverviewScreen(
+    overviewPageModel: OverviewPageModel,
+    context: Context,
+    snackBarHostState: SnackbarHostState,
+    navController: NavController
+) {
+    val validTokenUiState by overviewPageModel.validTokenUiState.collectAsState()
+    var showPassword by remember { mutableStateOf(false) }
+    var showTokenDialog by remember { mutableStateOf(false) }
+    val myActivity = LocalActivity.current as OverviewPage
+    // val context: Context = myActivity.applicationContext
+    val state = remember { TextFieldState(myActivity.forwardPreferences.getToken()?:"") }
+    overviewPageModel.updateServerStatus(state.text.toString())
+
+    Column (modifier = Modifier.fillMaxSize()
+        .padding(20.dp).border(5.dp, Color.Gray).background(Color.White).padding(12.dp)) {
+        Text(
+            text = "SMS Forward Overview",
+            fontSize = 24.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.wrapContentHeight().fillMaxWidth()
+                .padding(10.dp).align(Alignment.CenterHorizontally).weight(1.0f)
+        )
+        Text(
+            text = "Forward SMS forwards the received SMS based on the forward configurations.\n\n The received " +
+                    "SMS can be forwarded to a Telegram user or an email.\n\n The telegram user should have enabled to " +
+                    "to receive messages by calling /start in the bot(gaksmsbot).\n\nUser settings requires to set the token " +
+                    "configured for successful forwarding of messages.",
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.wrapContentHeight().fillMaxWidth()
+                .padding(10.dp).align(Alignment.CenterHorizontally).weight(4.0f)
+        )
+        Row (
+            modifier = Modifier.fillMaxWidth().padding(10.dp).weight(1.0f)
+        ){
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(4.dp).weight(1.0f),
+                onClick = {
+                    showTokenDialog = true
+                }
+            ) {
+                Text(text = "Configure")
+            }
+            OutlinedButton(
+                enabled = validTokenUiState.validToken,
+                onClick = {
+                    showTokenDialog = false
+                    navController.navigate("forward")
+                },
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(4.dp).weight(1.0f)
+            ) {
+                Text(text = "Continue")
+            }
+        }
+    }
+    if (showTokenDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            text = {
+                Column {
+                    Text(
+                        text = "SMS Forward User Token",
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.wrapContentHeight().fillMaxWidth()
+                            .padding(2.dp).align(Alignment.CenterHorizontally)
+                    )
+                    BasicSecureTextField(
+                        state = state,
+                        textObfuscationMode =
+                            if (showPassword) {
+                                TextObfuscationMode.Visible
+                            } else {
+                                TextObfuscationMode.RevealLastTyped
+                            },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(3.dp)
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                            .padding(6.dp),
+                        decorator = { innerTextField ->
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .padding(start = 16.dp, end = 48.dp)
+                                ) {
+                                    innerTextField()
+                                }
+                                Icon(
+                                    if (showPassword) {
+                                        Icons.Filled.Visibility
+                                    } else {
+                                        Icons.Filled.VisibilityOff
+                                    },
+                                    contentDescription = "Toggle password visibility",
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .requiredSize(48.dp).padding(16.dp)
+                                        .clickable { showPassword = !showPassword }
+                                )
+                            }
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    when(state.text) {
+                        "" -> Toast.makeText(context, "Invalid token", Toast.LENGTH_SHORT).show()
+                        else -> {
+                            Log.d("FORWARD", "State Input: " + state.text)
+                            overviewPageModel.updateServerStatus(state.text.toString())
+                        }
+                    }
+                    showTokenDialog = false
+                }) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {showTokenDialog = false}) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
