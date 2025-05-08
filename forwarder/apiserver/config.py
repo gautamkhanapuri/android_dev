@@ -12,21 +12,15 @@ def get_db_uri():
 
 def get_bot_token():
   """ Return bot token """
-  tkn = os.environ['BOTTOKEN'] if 'BOTTOKEN' in os.environ else None
-  if tkn is None:
-    tkn = ''
-  return tkn
+  return os.environ['BOTTOKEN'] if 'BOTTOKEN' in os.environ else ''
 
 def get_sendgrid_token():
   """ Return sendgrid token """
-  tkn = os.environ['SENDGRID_API_KEY'] if 'SENDGRID_API_KEY' in os.environ else None
-  if tkn is None:
-    tkn = ''
-  return tkn
+  return os.environ['SENDGRID_API_KEY'] if 'SENDGRID_API_KEY' in os.environ else ''
 
 def get_log_path():
   """Return the logpath"""
-  db_uri = os.join(BASE_DIR, "data/log/bot.log")
+  return os.join(BASE_DIR, "data/log/apiserver.log")
 
 class APIConfig:
     """The base config for all others like Testing, Development and Production"""
@@ -34,8 +28,8 @@ class APIConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = get_db_uri()
     CSRF_ENABLED = True
-    CSRF_SESSION_KEY = os.environ['SESSION_CSRF'] if 'SESSION_PW' in os.environ else ''
-    SECRET_KEY = os.environ['SESSION_SECRET'] if 'SESSION_PW' in os.environ else ''
+    CSRF_SESSION_KEY = os.environ['SESSION_CSRF'] if 'SESSION_CSRF' in os.environ else ''
+    SECRET_KEY = os.environ['SESSION_SECRET'] if 'SESSION_SECRET' in os.environ else ''
     APPNAME = 'Forwarder API 1.1, 08-May-2025'
     APIPREFIX = '/forward/api'
     BOTTOKEN = get_bot_token()
