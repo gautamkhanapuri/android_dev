@@ -12,11 +12,15 @@ interface TelegramUserApi {
 
     @GET(value="${AppConstants.PATHUSER}/{username}")
     suspend fun getTelegramUserStatus(@Path("username")username: String,
-                                      @HeaderMap hdrs: Map<String, String>): Response<TelegramUserStatus>
+                                      @HeaderMap hdrs: Map<String, String>):
+            Response<ApiResponse>
 
     @GET(value= AppConstants.PATHVERSION)
-    suspend fun getServerStatus(@HeaderMap hdrs: Map<String, String>): Response<ServerStatus>
+    suspend fun getServerStatus(@HeaderMap hdrs: Map<String, String>):
+            Response<ApiResponse>
 
     @POST(value= AppConstants.PATHMESSAGE)
-    suspend fun sendMessage(@Body sendMessageBody: SendMessageBody, @HeaderMap hdrs: Map<String, String> ): Response<MessageSent>
+    suspend fun sendMessage(@Body sendMessageBody: SendMessageBody,
+                            @HeaderMap hdrs: Map<String, String> ):
+            Response<ApiResponse>
 }

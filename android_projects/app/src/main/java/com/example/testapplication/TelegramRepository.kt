@@ -44,11 +44,11 @@ class TelegramRepository(private val telegramUserApi: TelegramUserApi,
     suspend fun  updateServerStatus(token: String? = null){
         try {
             var valid = false
-            val resp: Response<ServerStatus> = telegramUserApi.getServerStatus(getAuthHeaders(token))
+            val resp: Response<ApiResponse> = telegramUserApi.getServerStatus(getAuthHeaders(token))
             if (resp.body() != null ) {
-                val status = resp.body()
-                Log.d("FORWARD", "Token validation response: ${status.toString()}")
-                valid = status?.status == "OK"
+                val respBody = resp.body()
+                Log.d("FORWARD", "Token validation response: ${respBody.toString()}")
+                valid = respBody?.status == "OK"
             } else {
                 Log.d("FORWARD", "Token validation failed")
             }
@@ -69,14 +69,18 @@ class TelegramRepository(private val telegramUserApi: TelegramUserApi,
                 _validUserUiState.value = ValidUserUiState(username.contains("@"))
             } else {
                 try {
-                    val usrName: String = if (username.startsWith("@")) username.slice(1..(username.length-1)) else username
+                    val usrName: String =
+                        if (username.startsWith("@"))
+                            username.slice(1..(username.length-1))
+                        else
+                            username
                     var valid = false
-                    val resp: Response<TelegramUserStatus> =
+                    val resp: Response<ApiResponse> =
                         telegramUserApi.getTelegramUserStatus(usrName, getAuthHeaders(null))
                     if (resp.body() != null) {
-                        val status = resp.body()
-                        Log.d("FORWARD", "telegram User validation response: ${status.toString()}")
-                        valid = status?.status == "OK"
+                        val respBody = resp.body()
+                        Log.d("FORWARD", "telegram User validation response: ${respBody.toString()}")
+                        valid = respBody?.status == "OK"
                     } else {
                         Log.d("FORWARD", "Telegram user validation failed")
                     }
@@ -97,11 +101,11 @@ class TelegramRepository(private val telegramUserApi: TelegramUserApi,
                 telegram = sendMessageBody.telegram,
             )
 
-            val resp: Response<MessageSent> =
+            val resp: Response<ApiResponse> =
                 telegramUserApi.sendMessage(sendMessageBody, getAuthHeaders(null, true))
             if (resp.body() != null) {
-                val status = resp.body()
-                Log.d("FORWARD", "Send Message to user response: ${status.toString()}")
+                val respBody = resp.body()
+                Log.d("FORWARD", "Send Message to user response: ${respBody.toString()}")
             } else {
                 Log.d("FORWARD", "Send Message to user failed")
             }
