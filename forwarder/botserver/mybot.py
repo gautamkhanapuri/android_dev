@@ -9,6 +9,7 @@ def send_message(username, msg):
     return True
   return False
 
+
 def send_to_apiserver(name, username, chatId, active):
   user = getUser(botCfg.USERNAME)
   if user:
@@ -20,7 +21,6 @@ def send_to_apiserver(name, username, chatId, active):
       LOGGER.info("Updated to apiserver: %s", resp.json())
 
            
-
 @bot.message_handler(commands=['stopbot', 'delete'])
 def accept_stop(message):
   name = "%s %s" % (message.chat.first_name, message.chat.last_name)
@@ -29,6 +29,7 @@ def accept_stop(message):
   send_to_apiserver(name, message.chat.username, message.chat.id, False)
   bot.reply_to(message, "%s, will not send message until /start command - %s" % (name, botCfg.VERSION))
 
+
 @bot.message_handler(commands=['start'])
 def accept_start(message):
   name = "%s %s" % (message.chat.first_name, message.chat.last_name)
@@ -36,6 +37,7 @@ def accept_start(message):
   createTelegramUser(name, message.chat.username, message.chat.id, True)
   send_to_apiserver(name, message.chat.username, message.chat.id, True)
   bot.reply_to(message, "%s, will send messages until /stopbot command - %s" % (name, botCfg.VERSION))
+
 
 @bot.message_handler(commands=['help'])
 def accept_help(message):
@@ -53,6 +55,7 @@ def accept_help(message):
     
   """ % botCfg.VERSION
   bot.reply_to(message, "%s, %s" % (name, msg))
+
 
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):

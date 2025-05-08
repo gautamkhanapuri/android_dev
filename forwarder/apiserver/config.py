@@ -34,9 +34,9 @@ class APIConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = get_db_uri()
     CSRF_ENABLED = True
-    CSRF_SESSION_KEY = os.environ['SESSION_PW'] if 'SESSION_PW' in os.environ else ''
-    SECRET_KEY = os.environ['SESSION_PW'] if 'SESSION_PW' in os.environ else ''
-    APPNAME = 'ForwardSMS API 1.0, 01-May-2025'
+    CSRF_SESSION_KEY = os.environ['SESSION_CSRF'] if 'SESSION_PW' in os.environ else ''
+    SECRET_KEY = os.environ['SESSION_SECRET'] if 'SESSION_PW' in os.environ else ''
+    APPNAME = 'Forwarder API 1.1, 08-May-2025'
     APIPREFIX = '/forward/api'
     BOTTOKEN = get_bot_token()
     SENDGRID = get_sendgrid_token()

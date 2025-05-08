@@ -85,9 +85,9 @@ def create_app(mydb=None):
     myapp.config.from_object(config[config_name])
     LOGGER.info("DB URI: %s", myapp.config['SQLALCHEMY_DATABASE_URI'])
     cors = CORS(myapp, resources={
-                                   r"/forward/api/telegram/user": {"origins": "localhost", "allow_headers": "*"},
-                                   r"/forward/api/*": {"origins": "*", "allow_headers": "*"}
-           })
+                                   r"/forward/localapi/telegram/user": {"origins": "http://localhost:9080"},
+                                   r"/forward/api/*": {"origins": "*"}
+           }, supports_credentials=True)
     # 'allow_headers': ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']}})
     # Access-Control-Allow-Origin => *
     # Access-Control-Allow-Headers => Origin, X-Requested-With, Content-Type, Accept, Authorization

@@ -13,9 +13,10 @@ from models.telegramuser import updateTelegramUser, getTelegramUser
 from models.forward import createForward
 
 # Define the blueprint: 'login'
-MODFORWARD = Blueprint('forward', __name__, url_prefix=app.config['APIPREFIX'])
+# MODFORWARD = Blueprint('forward', __name__, url_prefix=app.config['APIPREFIX'])
+MODFORWARD = Blueprint('forward', __name__)
 
-@MODFORWARD.route('/version', methods=['POST', 'GET'])
+@MODFORWARD.route('/forward/api/version', methods=['POST', 'GET'])
 @auth.login_required
 def app_version():
     "Return the current version of the application, does require authentication."
@@ -23,7 +24,7 @@ def app_version():
     return jsonify(data)
 
 
-@MODFORWARD.route('/telegram/user', methods=['POST'])
+@MODFORWARD.route('/forward/localapi/telegram/user', methods=['POST'])
 @auth.login_required
 def update_telegramuser():
     """ Update telegram user data """
@@ -38,22 +39,19 @@ def update_telegramuser():
     return jsonify({STATUS: NOK, "message": "Telegram user update failed"})
 
 
-@MODFORWARD.route('/user/<username>', methods=['GET'])
+@MODFORWARD.route('/forward/api/user/<username>', methods=['GET'])
 @auth.login_required
 def get_telegramuser(username):
     """ get telegram user data """
     LOGGER.debug(request.url)
-    # print(dir(request))
-    print(type(request.headers))
-    print(dir(request.headers))
-    print(request.headers)
+    LOGGER.debug(request.headers)
     user = getTelegramUser(username)
     if user:
         return jsonify({STATUS: OK, "message": "User '%s' is valid" % username})
-    return jsonify({STATUS: NOK, "message": "User '%s' is valid" % username})
+    return jsonify({STATUS: NOK, "message": "User '%s' is invalid" % username})
 
 
-@MODFORWARD.route('/message', methods=['POST'])
+@MODFORWARD.route('/forward/api/message', methods=['POST'])
 @auth.login_required
 def forward_message():
     """ Forward message to telegram or email """
