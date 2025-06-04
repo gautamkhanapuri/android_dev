@@ -1,0 +1,11 @@
+03 June 2025
+Android APP Pitch
+
+1. Release to Play Store.
+2. Encrypt messages from app using a encryption key. At the delivery end, same encryption key shall be used to decrypt the message. This shall maintain the privacy of the message during transit.
+3. "Forward all" feature to forward all messages.
+4. Forward customer care issues/messages into jira ticketing/issue management.
+5. WhatsApp Business account. Ask Ankit how he got a business account.
+6. Useful for students in foreign countries.
+7. Advertise with posters in College Notice boards.
+8. Back up messages to Google Drive.
