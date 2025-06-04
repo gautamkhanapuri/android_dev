@@ -32,9 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 class LandingPageActivity : AppCompatActivity() {
@@ -90,6 +95,18 @@ fun LandingPage(onAuthSuccess: () -> Unit = {}) {
                 contentDescription = "GAK Solutions Logo.",
                 modifier = Modifier
                     .size(200.dp)
+            )
+            Text(
+                text = AppConstants.VERSION,
+                style = TextStyle(
+                    color = Color.Black,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontStyle = FontStyle. Italic,
+                    letterSpacing = 0.1.em,
+                    textDecoration = TextDecoration. Underline
+                ),
+                modifier = Modifier.padding(bottom = 20.dp)
             )
 
             Spacer(

@@ -1,6 +1,6 @@
 package com.example.testapplication
 
-data class MessageSent(
+data class ApiResponse (
     val message: String,
     val status: String
 )

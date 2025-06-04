@@ -129,4 +129,23 @@ fun mainMap() {
             k, v -> print("key --> $k: value --> $v, ")
     }
     println()
+
+    val map = mapOf("Alice" to 21, "Bob" to 25)
+    for ((name, age) in map) {                                      // 2
+        println("$name is $age years old")
+    }
+
+    val (num, name) = Pair(1, "one")             // 2
+
+    println("num = $num, name = $name")
+}
+
+class Pair<K, V>(val first: K, val second: V) {  // 1
+    operator fun component1(): K {
+        return first
+    }
+
+    operator fun component2(): V {
+        return second
+    }
 }
