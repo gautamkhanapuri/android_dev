@@ -1,0 +1,90 @@
+brew search postgresql
+brew formulae | grep postgresql
+brew install postgresql@16
+
+Add Aliases to stop and start postgresql
+alias spg='brew services start postgresql@16'
+alias cpg='ps -aef | grep postgres'
+alias epg='brew services stop postgresql@16'
+alias pgcl='/usr/local/opt/postgresql\@16/bin/psql -U postgres'
+
+/usr/local/opt/postgresql\@16/bin/postgres --version
+/usr/local/opt/postgresql\@16/bin/createdb testdb
+/usr/local/opt/postgresql\@16/bin/dropdb testdb
+/usr/local/opt/postgresql\@16/bin/createuser postgres
+
+
+\connect postgres <ajeybk installed user>
+CREATE USER user1 WITH PASSWORD 'password@321#';
+GRANT ALL PRIVILEGES ON DATABASE testdb  TO user1;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO user1;
+\dg
+drop USER user1
+\dg
+# Change in app_init.py
+# from
+#  engine = create_engine('postgresql://user1:pwd%26321%23@localhost:5432/testdb')
+# to
+#  engine = create_engine('postgresql://user1:password%26321%23@localhost:5432/testdb')
+
+
+
+\c testdb
+\c postgres
+CREATE USER user1 WITH PASSWORD 'password@321';   // Will fail as no role
+
+
+\conninfo
+\password ajeybk
+\conninfo
+\password postgres
+
+\c postgres ajeybk
+\conninfo
+
+\q
+
+
+ALTER USER postgres WITH PASSWORD 'newsuperpassword';
+\password postgres
+
+CREATE TABLE customers (
+       id SERIAL PRIMARY KEY,
+       customerId VARCHAR(32),
+       firstName VARCHAR(64),
+       lastName VARCHAR(64),
+       company VARCHAR(64),
+       city VARCHAR(64),
+       country VARCHAR(64),
+       phone1 VARCHAR(32),
+       phone2 VARCHAR(32),
+       email VARCHAR(64),
+       subscription DATE,
+       website VARCHAR(255)
+   );
+
+COPY customers(id, customerId, firstName, lastName, company, city, country, phone1, phone2, email, subscription, website)
+   FROM '<path to this file>/customers-100.csv'
+   DELIMITER ','
+   CSV HEADER;
+
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  age INT NOT NULL
+);
+
+
+https://medium.com/technology-hits/database-queries-in-python-sqlalchemy-postgresql-e90afe0a06b4
+
+https://github.com/datablist/sample-csv-files/tree/main?tab=readme-ov-file
+
+python3 -m venv qryenv
+source qryenv/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+
+
+python app.py
+
