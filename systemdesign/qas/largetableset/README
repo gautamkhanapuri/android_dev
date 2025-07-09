@@ -48,6 +48,35 @@ CREATE USER user1 WITH PASSWORD 'password@321';   // Will fail as no role
 ALTER USER postgres WITH PASSWORD 'newsuperpassword';
 \password postgres
 
+CREATE TABLE products (
+       id SERIAL PRIMARY KEY,
+       name VARCHAR(128),
+       description VARCHAR(255),
+       brand VARCHAR(128),
+       category VARCHAR(64),
+       price INT not NULL,
+       currency VARCHAR(16),
+       stock INT not NULL,
+       ean BIGINT not NULL,
+       color VARCHAR(32),
+       size VARCHAR(16),
+       availability VARCHAR(16),
+       internalId INT not NULL
+   );
+
+curl 'https://drive.usercontent.google.com/download?id=1aZNLCVO0VoHmvPNvSC2teeFmZfiViE6u&export=download&authuser=0' -o products-1000.csv
+
+COPY products(id,name,description,brand,category,price,currency,stock,ean,color,size,availability,internalid)
+   FROM '/Users/ajeybk/projects/prancer/gak/systemdesign/qas/largetableset/products-100.csv'
+   DELIMITER ','
+   CSV HEADER;
+
+# Products list by price in descending order limit to 10
+select id, name, price from products order by price desc limit 10;
+
+select MAX(price) as second_price from products where price < (select MAX(price) from products);
+
+
 CREATE TABLE customers (
        id SERIAL PRIMARY KEY,
        customerId VARCHAR(32),
@@ -68,12 +97,23 @@ COPY customers(id, customerId, firstName, lastName, company, city, country, phon
    DELIMITER ','
    CSV HEADER;
 
+brew install  7zip
+7zz x customers-1000000.zip
+
+COPY customers(id, customerId, firstName, lastName, company, city, country, phone1, phone2, email, subscription, website)
+   FROM '/Users/ajeybk/projects/prancer/gak/systemdesign/qas/largetableset/customers-1000000.csv'
+   DELIMITER ','
+   CSV HEADER;
+
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
   age INT NOT NULL
 );
+
+# Dump Table Schema
+/usr/local/opt/postgresql\@16/bin/pg_dump -t 'public.customers' --schema-only testdb
 
 
 https://medium.com/technology-hits/database-queries-in-python-sqlalchemy-postgresql-e90afe0a06b4
@@ -87,4 +127,31 @@ pip install -r requirements.txt
 
 
 python app.py
+
+
+Source: Insta @coding_lyf
+
+Q: Suppose you have 1 million records like Amazon which handles a massive number of products. 
+
+S: Pagination with pagesize and other parameters as per implementation.
+
+/products?offset=1000&pagesize=10
+Why not offset pagination: Offset is to skip number of rows
+   select * from products order by id  limit 10 offset 1000;
+
+/products?key=0&pagesize=10
+/products?key=10&pagesize=10
+keyset pagination: retrieves records based on a specific key (usually unique and indexed column like id or timestamp). Faster than offset as indexed column fetch is log(n)
+   select * from products where id > 10 order by id limit 10;
+
+@measuretime
+def get_products(offset=0, pagesize=10):
+  # validate offset for integer and greater than zero
+  # validate pagesize for positive integer and in multiples of 10
+  return [] # Array of products
+
+def get_products(key=0, pagesize=10):
+  # validate key for integer and greater than zero
+  # validate pagesize for positive integer and in multiples of 10
+  return [] # Array of products
 
