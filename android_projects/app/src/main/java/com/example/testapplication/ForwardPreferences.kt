@@ -7,7 +7,6 @@ class ForwardPreferences(context: Context) {
 
     private val MYPREFS = "config.data"
     private val USERTOKEN = "TOKEN"
-    // private val AUTH = "YWpleWJrOiNrYjMyMSEj"
     private val sharedPreferences = context.getSharedPreferences(MYPREFS, Context.MODE_PRIVATE)
 
     fun getToken(): String? {
