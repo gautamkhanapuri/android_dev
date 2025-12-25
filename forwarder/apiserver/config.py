@@ -7,7 +7,21 @@ def get_db_uri():
   if database_uri:
     db_uri = database_uri
   else:
-    db_uri = "sqlite:///%s" % os.path.join(BASE_DIR, "data/db/apiserver.db")
+    # Create db directory if doesn't exist
+    db_dir = os.path.join(BASE_DIR, "data/db")
+    os.makedirs(db_dir, exist_ok=True)
+
+    # Check write permission
+    db_path = os.path.join(db_dir, "apiserver.db")
+    try:
+      # Test write by touching file
+      open(db_path, 'a').close()
+    except PermissionError:
+      print(f"ERROR: No write permission for {db_path}")
+      sys.exit(1)
+
+    db_uri = "sqlite:///%s" % db_path
+    # db_uri = "sqlite:///%s" % os.path.join(BASE_DIR, "data/db/apiserver.db")
   return db_uri
 
 def get_bot_token():

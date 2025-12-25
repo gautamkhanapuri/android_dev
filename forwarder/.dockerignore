@@ -1,0 +1,16 @@
+.git
+.github
+.env
+.env.*
+*.pyc
+__pycache__
+venv/
+env/
+.vscode/
+.idea/
+*.log
+.DS_Store
+data/
+*.db
+README.md
+docker-compose.yml

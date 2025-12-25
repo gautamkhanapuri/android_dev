@@ -24,7 +24,21 @@ def setup_logging(logfile=True):
 
   if logfile:
     baseDir = os.path.abspath(os.path.dirname(__file__))
-    logpath = os.path.join(baseDir, "data/log/bot.log")
+    logDir = os.path.join(baseDir, "data/log")
+
+    # Create directory if it doesn't exist
+    os.makedirs(logDir, exist_ok=True)
+
+    # Check write permission
+    logpath = os.path.join(logDir, "bot.log")
+    try:
+        # Test write by opening file
+        with open(logpath, 'a') as f:
+            pass
+    except PermissionError:
+        print(f"ERROR: No write permission for {logpath}")
+        sys.exit(1)
+
     fileHandler = logging.FileHandler(logpath)
     fileHandler.setFormatter(logFormat)
     fileHandler.setLevel(loglevel)
