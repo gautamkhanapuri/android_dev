@@ -26,11 +26,29 @@ def get_db_uri():
 
 def get_bot_token():
   """ Return bot token """
-  return os.environ['BOTTOKEN'] if 'BOTTOKEN' in os.environ else ''
+  tkn = os.environ['BOTTOKEN'] if 'BOTTOKEN' in os.environ else None
+  if tkn is None:
+    tkn = ''
+  return tkn
 
 def get_sendgrid_token():
   """ Return sendgrid token """
-  return os.environ['SENDGRID_API_KEY'] if 'SENDGRID_API_KEY' in os.environ else ''
+  tkn = os.environ['SENDGRID_API_KEY'] if 'SENDGRID_API_KEY' in os.environ else None
+  if tkn is None:
+    tkn = ''
+  return tkn
+
+def get_gmail_token():
+  """ Return gmail token """
+  tkn = os.environ['GMAIL_APP'] if 'GMAIL_APP' in os.environ else None
+  if tkn is None:
+    tkn = ''
+  return tkn
+
+def get_resend_token():
+  """ Return resend API key """
+  tkn = os.environ.get('RESEND_API_KEY', '')
+  return tkn
 
 def get_log_path():
   """Return the logpath"""
@@ -48,6 +66,8 @@ class APIConfig:
     APIPREFIX = '/forward/api'
     BOTTOKEN = get_bot_token()
     SENDGRID = get_sendgrid_token()
+    GMAILAPP = get_gmail_token()
+    RESEND_API_KEY = get_resend_token()
     FROMEMAIL = 'kbajey@gmail.com'
 
     def get_session_key(self):

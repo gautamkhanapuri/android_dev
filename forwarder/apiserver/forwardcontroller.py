@@ -2,6 +2,14 @@
 import os
 import datetime
 
+# Source - https://stackoverflow.com/a
+# Posted by Pedro Lobito
+# Retrieved 2025-11-08, License - CC BY-SA 4.0
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import resend
 import sendgrid
 from sendgrid.helpers.mail import *
 
@@ -59,7 +67,9 @@ def forward_message():
     data = request.json
     LOGGER.info('ARGS: %s', data)
     if data['email']:
-        send_email(data)
+        # send_email(data)
+        # send_email_gmail(data)
+        send_email_resend(data)
     elif data['telegram']:
         send_telegram(data)
     else:
@@ -107,4 +117,50 @@ def verify_password(username, password):
             return False
     return True
 
+
+def send_email_resend(data):
+  """Send email using Resend API"""
+  resend.api_key = app.config['RESEND_API_KEY']
+
+  try:
+    params = {
+      "from": "SMS Forward <noreply@smsforwards.gaks.solutions>",  # Changed!
+      "to": [data['email']],
+      "subject": f"SMS Forward - from: {data['from']}",
+      "text": data['message']
+    }
+
+    email = resend.Emails.send(params)
+    LOGGER.info(f"Email sent successfully via Resend: {email['id']}")
+    return True
+  except Exception as e:
+    LOGGER.error(f"Resend email failed: {e}")
+    raise
+
+
+def send_email_gmail(data):
+  gmailUser = app.config['FROMEMAIL']
+  gmailPassword = app.config['GMAILAPP']
+  recipient = data['email']
+  subject = "SMS Forward -  from: %s on %s " % (data['from'], datetime.datetime.now().strftime("%Y-%m-%d %H:%S"))
+
+  msg = MIMEMultipart()
+  msg['From'] = f'"SMS Forward " <{gmailUser}>'
+  msg['To'] = recipient
+  msg['Subject'] = subject
+  msg.attach(MIMEText(data['message']))
+
+  try:
+    mailServer = smtplib.SMTP('smtp.gmail.com', 587)
+    mailServer.ehlo()
+    mailServer.starttls()
+    mailServer.ehlo()
+    mailServer.login(gmailUser, gmailPassword)
+    mailServer.sendmail(gmailUser, recipient, msg.as_string())
+    mailServer.close()
+    print ('Email sent!')
+    LOGGER.info("Email sent successfully!")
+  except Exception as e:
+    LOGGER.info("Email send failed!!")
+    raise
 

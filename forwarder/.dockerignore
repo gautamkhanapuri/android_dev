@@ -14,3 +14,5 @@ data/
 *.db
 README.md
 docker-compose.yml
+setup_vm.sh
+start_containers.sh
