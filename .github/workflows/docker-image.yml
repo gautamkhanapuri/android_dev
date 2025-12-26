@@ -1,0 +1,116 @@
+name: Build and Deploy
+
+on:
+  # push:
+  #   branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checout code
+      uses: actions/checkout@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: forwarder
+        platforms: linux/amd64
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/sms-forwarder:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/sms-forwarder:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to Droplet
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DROPLET_IP }}
+        username: root
+        key: $${{ secrets.DROPLET_SSH_KEY }}
+        script: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/sms-forwarder:latest
+          docker stop sms-forward-api sms-forward-bot 2>/dev/null || true
+          sleep 10
+          docker rm -f sms-forward-api sms-forward-bot
+          bash /root/start_containers.sh
+          sleep 10
+
+  test:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Test API endpoints
+      run: |
+        # Test 1: Health Check
+        echo "Testing health endpoint..."
+        RESPONSE=$(curl -s http://${{ secrets.DROPLET_IP }}:8000/)
+        echo "Response: $RESPONSE" # Remove after the first few runs
+        EXPECTED='{"app":"Forwarder API 1.1, 08-May-2025","status":"OK"}'
+        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+          echo "Health check passed!"
+        else
+          echo "Health check failed!"
+          echo "Received: $RESPONSE"
+          exit 1
+        fi
+
+        # Test 2: Version endpoint (with auth)
+        RESPONSE=$(curl -X GET -s -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" http://${{ secrets.DROPLET_IP }}:8000/forward/api/version)
+        echo "Response: $RESPONSE"
+        EXPECTED='{"message":"Forwarder API 1.1, 08-May-2025","status":"OK"}'
+        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+          echo "Version endpoint test passed!"
+        else
+          echo "Version endpoint test FAILED!"
+          exit 1
+
+        # Test 3: Send test email
+        echo "EMAIL test"
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" http://${{ secrets.DROPLET_IP }}:8000/forward/api/message -d "{\"telegram\": \"\", \"message\": \"Test forward message on deployment: SUCCESS\", \"email\": \"${{ secrets.TEST_EMAIL }}\", \"from\": \"0123456789\"}")
+        echo "Response: $RESPONSE"
+        echo "Check your email"
+        EXPECTED='{"message":"Message was forwarded","status":"OK"}'
+        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+          echo "EMAIL test passed!"
+        else
+          echo "EMAIL test FAILED!"
+          exit 1
+
+        # Test 4: Send telegram test
+        echo "TELEGRAM test"
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" http://${{ secrets.DROPLET_IP }}:8000/forward/api/message -d "{\"telegram\": \"${{ secrets.TEST_TELEGRAM }}\", \"message\": \"Test forward message on deployment: SUCCESS\", \"email\": \"\", \"from\": \"0123456789\"}")
+        echo "Response: $RESPONSE"
+        echo "Check your telegram"
+        # EXPECTED='{"message":"Message was forwarded","status":"OK"}'
+        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+          echo "TELEGRAM test passed!"
+        else
+          echo "TELEGRAM test FAILED!"
+          exit 1
+
+        echo ""
+        echo "=========================================="
+        echo "All tests passed!"
+        echo "=========================================="
+
+
+
+
+
+
+
+        
