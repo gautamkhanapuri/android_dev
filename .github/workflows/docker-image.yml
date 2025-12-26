@@ -78,6 +78,7 @@ jobs:
         else
           echo "Version endpoint test FAILED!"
           exit 1
+        fi
 
         # Test 3: Send test email
         echo "EMAIL test"
@@ -90,6 +91,7 @@ jobs:
         else
           echo "EMAIL test FAILED!"
           exit 1
+        fi
 
         # Test 4: Send telegram test
         echo "TELEGRAM test"
@@ -102,6 +104,7 @@ jobs:
         else
           echo "TELEGRAM test FAILED!"
           exit 1
+        fi
 
         echo ""
         echo "=========================================="
