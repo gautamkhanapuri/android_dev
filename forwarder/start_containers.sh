@@ -6,7 +6,7 @@ APP_DIR="~/smsfwd"
 ENV_FILE="/etc/environment_smsfwd"
 APISERVER_DATA_DIR="$APP_DIR/apiserver/data"
 BOTSERVER_DATA_DIR="$APP_DIR/botserver/data"
-DOCKER_IMAGE=""
+DOCKER_IMAGE="gautamkhanapuri/sms-forwarder:latest"
 
 echo "***** Starting SMS Forward Backend Containers ***** "
 
@@ -27,7 +27,7 @@ docker run -d \
   --env-file $ENV_FILE \
   -e RUN_BOT_SERVER=false \
   -e APPPORT=8000 \
-  -p 8000:8000 \
+  --network host
   -v $APISERVER_DATA_DIR/db:/forwarder/apiserver/data/db \
   -v $APISERVER_DATA_DIR/log:/forwarder/apiserver/data/log \
   -v $BOTSERVER_DATA_DIR/db:/forwarder/botserver/data/db \
@@ -41,6 +41,7 @@ sleep 10
 echo "Starting Bot Server..."
 docker run -d \
   --name sms-forward-bot \
+  --network host
   --env-file $ENV_FILE \
   -e RUN_BOT_SERVER=true \
   -v $APISERVER_DATA_DIR/db:/forwarder/apiserver/data/db \

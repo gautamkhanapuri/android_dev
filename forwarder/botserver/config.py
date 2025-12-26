@@ -40,7 +40,7 @@ class BotConfig(object):
   SQLALCHEMY_DATABASE_URI = get_db_uri()
   SQLALCHEMY_LOGS = False
   APPNAME = 'Forwarder Telegram Bot 1.1, 08-May-2025'
-  URL = 'http://localhost:9080'
+  URL = 'http://localhost:8000'
   URLPATH = '/forward/localapi/telegram/user'
   BOTTOKEN = get_bot_token()
   USERNAME = 'ajeybk'
