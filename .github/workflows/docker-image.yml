@@ -40,8 +40,9 @@ jobs:
       with:
         host: ${{ secrets.DROPLET_IP }}
         username: root
-        key: $${{ secrets.DROPLET_SSH_KEY }}
+        key: ${{ secrets.DROPLET_SSH_KEY }}
         script: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/sms-forwarder:latest
           docker stop sms-forward-api sms-forward-bot 2>/dev/null || true
           sleep 10
