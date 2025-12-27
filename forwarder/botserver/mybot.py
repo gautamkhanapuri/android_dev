@@ -2,12 +2,12 @@ import requests
 from bot_init import bot, LOGGER, botCfg
 from models import createTelegramUser, updateTelegramUser, getTelegramUser, getUser
 
-def send_message(username, msg):
-  user = getTelegramUser(username)
-  if user:
-    bot.send_message(user.chatId, msg)
-    return True
-  return False
+# def send_message(username, msg):
+#   user = getTelegramUser(username)
+#   if user:
+#     bot.send_message(user.chatId, msg)
+#     return True
+#   return False
 
 
 def send_to_apiserver(name, username, chatId, active):
