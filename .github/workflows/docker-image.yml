@@ -58,7 +58,7 @@ jobs:
       run: |
         # Test 1: Health Check
         echo "Testing health endpoint..."
-        RESPONSE=$(curl -s http://${{ secrets.DROPLET_IP }}:8000/)
+        RESPONSE=$(curl -s https://smsforwards.gaks.solutions/)
         echo "Response: $RESPONSE" # Remove after the first few runs
         EXPECTED='{"app":"Forwarder API 1.1, 08-May-2025","status":"OK"}'
         if [[ "$RESPONSE" == "$EXPECTED" ]]; then
@@ -70,7 +70,7 @@ jobs:
         fi
 
         # Test 2: Version endpoint (with auth)
-        RESPONSE=$(curl -X GET -s -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" http://${{ secrets.DROPLET_IP }}:8000/forward/api/version)
+        RESPONSE=$(curl -X GET -s -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" https://smsforwards.gaks.solutions/forward/api/version)
         echo "Response: $RESPONSE"
         EXPECTED='{"message":"Forwarder API 1.1, 08-May-2025","status":"OK"}'
         if [[ "$RESPONSE" == "$EXPECTED" ]]; then
@@ -82,7 +82,7 @@ jobs:
 
         # Test 3: Send test email
         echo "EMAIL test"
-        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" http://${{ secrets.DROPLET_IP }}:8000/forward/api/message -d "{\"telegram\": \"\", \"message\": \"Test forward message on deployment: SUCCESS\", \"email\": \"${{ secrets.TEST_EMAIL }}\", \"from\": \"0123456789\"}")
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" https://smsforwards.gaks.solutions/forward/api/message -d "{\"telegram\": \"\", \"message\": \"Test forward message on deployment: SUCCESS\", \"email\": \"${{ secrets.TEST_EMAIL }}\", \"from\": \"0123456789\"}")
         echo "Response: $RESPONSE"
         echo "Check your email"
         EXPECTED='{"message":"Message was forwarded","status":"OK"}'
@@ -95,7 +95,7 @@ jobs:
 
         # Test 4: Send telegram test
         echo "TELEGRAM test"
-        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" http://${{ secrets.DROPLET_IP }}:8000/forward/api/message -d "{\"telegram\": \"${{ secrets.TEST_TELEGRAM }}\", \"message\": \"Test forward message on deployment: SUCCESS\", \"email\": \"\", \"from\": \"0123456789\"}")
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -u "${{ secrets.API_USERNAME }}:${{ secrets.API_PASSWORD }}" https://smsforwards.gaks.solutions/forward/api/message -d "{\"telegram\": \"${{ secrets.TEST_TELEGRAM }}\", \"message\": \"Test forward message on deployment: SUCCESS\", \"email\": \"\", \"from\": \"0123456789\"}")
         echo "Response: $RESPONSE"
         echo "Check your telegram"
         # EXPECTED='{"message":"Message was forwarded","status":"OK"}'
@@ -103,6 +103,55 @@ jobs:
           echo "TELEGRAM test passed!"
         else
           echo "TELEGRAM test FAILED!"
+          exit 1
+        fi
+
+        # Test 5: Register new user
+        echo "REGISTER USER test"
+        TIMESTAMP=$(date +%s)
+        TEST_USERNAME="testuser_${TIMESTAMP}"
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" https://smsforwards.gaks.solutions/forward/api/register -d "{\"name\":\"Test User\",\"username\":\"${TEST_USERNAME}\",\"password\":\"testpass123\"}")
+        echo "Response: $RESPONSE"
+        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q '"token"'; then
+          TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          echo "REGISTER USER test passed! Token: $TOKEN"
+        else
+          echo "REGISTER USER test FAILED!"
+          exit 1
+        fi
+        
+        # Test 6: Reset token
+        echo "RESET TOKEN test"
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" https://smsforwards.gaks.solutions/forward/api/reset-token -d "{\"username\":\"${TEST_USERNAME}\",\"password\":\"testpass123\"}")
+        echo "Response: $RESPONSE"
+        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q "\"token\":\"${TOKEN}\""; then
+          echo "RESET TOKEN test passed!"
+        else
+          echo "RESET TOKEN test FAILED!"
+          exit 1
+        fi
+        
+        # Test 7: Delete account
+        echo "DELETE ACCOUNT test"
+        RESPONSE=$(curl -X DELETE -s -H "Content-Type: application/json" https://smsforwards.gaks.solutions/forward/api/delete-account -d "{\"username\":\"${TEST_USERNAME}\",\"password\":\"testpass123\"}")
+        echo "Response: $RESPONSE"
+        EXPECTED='{"message":"Account deleted successfully","status":"OK"}'
+        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+          echo "DELETE ACCOUNT test passed!"
+        else
+          echo "DELETE ACCOUNT test FAILED!"
+          exit 1
+        fi
+        
+        # Test 8: Verify deletion
+        echo "VERIFY DELETION test"
+        RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" https://smsforwards.gaks.solutions/forward/api/reset-token -d "{\"username\":\"${TEST_USERNAME}\",\"password\":\"testpass123\"}")
+        echo "Response: $RESPONSE"
+        EXPECTED='{"message":"Invalid username or password","status":"NOK"}'
+        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+          echo "VERIFY DELETION test passed!"
+        else
+          echo "VERIFY DELETION test FAILED!"
           exit 1
         fi
 
