@@ -8,6 +8,8 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from utils import TOKENTIMEOUT
 
@@ -46,6 +48,7 @@ def setup_logging(logfile=True):
 
   return logger
 
+limiter = None
 bot = None
 api = None
 db = None
@@ -110,7 +113,14 @@ def create_app(mydb=None):
     myapp.before_request(make_session_permanent)
     myapp.register_error_handler(404, not_found)
     myapp.add_url_rule('/', 'index', index)
-    return myapp
+
+    limiter = Limiter(
+      get_remote_address,
+      app=myapp,
+      default_limits=["50 per day", "10 per hour"],
+      storage_uri="memory://"
+    )
+    return myapp, limiter
 
 def unauthorized():
     """Message when authorization fails."""
@@ -143,10 +153,10 @@ def register_modules(myapp):
 
 def initApp():
     "The starting point of the flask application, both for debug and production."
-    global app, db, auth, bot
+    global app, db, auth, bot, limiter
     LOGGER.info("START")
     db = create_db()
-    app = create_app(db)
+    app, limiter = create_app(db)
     auth = create_auth()
     bot = createBot(app.config['BOTTOKEN'])
     register_modules(app)

@@ -14,9 +14,9 @@ import sendgrid
 from sendgrid.helpers.mail import *
 
 from flask import Blueprint, jsonify, g, request
-from api_init import auth, app, db, LOGGER, bot
-from utils import ERROR, OK, NOK, STATUS
-from models.user import User
+from api_init import auth, app, db, LOGGER, bot, limiter
+from utils import ERROR, OK, NOK, STATUS, JSONMIME
+from models.user import User, checkUsernameAlreadyExists, createUser, basicAuth, verifyUsernamesPassword, deleteUser
 from models.telegramuser import updateTelegramUser, getTelegramUser
 from models.forward import createForward
 
@@ -79,6 +79,99 @@ def forward_message():
     data['status'] = True
     createForward(data)
     return jsonify({STATUS: OK, "message": "Message was forwarded"})
+
+
+@MODFORWARD.route('/forward/api/register', methods=['POST'])
+@limiter.limit("6 per hour")
+def register_user():
+  """
+  Registers a new user and sends token back.
+  """
+  if "Content-Type" not in request.headers or request.headers["Content-Type"] != JSONMIME:
+    return jsonify({STATUS: NOK, "message": "Invalid payload format"}), 400
+
+  data = request.json
+
+  # Validate presence of the three fields.
+  if not data.get("name") or not data.get("username") or not data.get("password"):
+    return jsonify({STATUS: NOK, "message": "Missing required fields: name, username, password"}), 400
+
+  name = data["name"]
+  username = data["username"]
+  password = data["password"]
+
+  exists = checkUsernameAlreadyExists(username)
+  if exists:
+    LOGGER.warning(f"Registration failed - username exists: {username}; name: {name}")
+    return jsonify({STATUS: NOK, "message": f"Username {username} already exists. Pick a unique username."}), 400
+
+  try:
+    user = createUser(name, username, password)
+    if user:
+      token = basicAuth(username, password)
+      LOGGER.info(f"User registered successfully: {username}")
+      return jsonify({STATUS: OK, "message": "Registration successful", "token": token}), 201
+    else:
+      LOGGER.warning(f"Failed to register user. No error thrown. Name: {name}, Username: {username}")
+      return jsonify({STATUS: NOK, "message": "Registration failed"}), 500
+  except Exception as e:
+    LOGGER.error(f"Registration failed for Name: {name}, Username: {username}. ERROR: {e}")
+    return jsonify({STATUS: NOK, "message": "Registration failed"}), 500
+
+
+@MODFORWARD.route('/forward/api/reset-token', methods=['POST'])
+@limiter.limit("6 per hour")
+def reset_token():
+  """
+  Retrieve forgotten token using username and password.
+  """
+  if "Content-Type" not in request.headers or request.headers["Content-Type"] != JSONMIME:
+    return jsonify({STATUS: NOK, "message": "Invalid payload format"}), 400
+
+  data = request.json
+
+  username = data["username"]
+  password = data["password"]
+
+  # Find this username
+  exists = checkUsernameAlreadyExists(username)
+  if not exists:
+    LOGGER.warning(f"Token reset failed - user not found: {username}")
+    return jsonify({STATUS: NOK, "message": f"Invalid username or password"}), 400
+
+  verified = verifyUsernamesPassword(username, password)
+  if not verified:
+    LOGGER.warning(f"Token reset failed - invalid password for: {username}")
+    return jsonify({STATUS: NOK, "message": "Invalid username or password"}), 401
+  token = basicAuth(username, password)
+  LOGGER.info(f"Token reset successful for: {username}")
+  return jsonify({STATUS: OK, "message": "Token retrieved successfully", "token": token}), 200
+
+
+@MODFORWARD.route('/forward/api/delete-account', methods=['DELETE'])
+@limiter.limit("6 per hour")
+def delete_account():
+  if "Content-Type" not in request.headers or request.headers["Content-Type"] != JSONMIME:
+    return jsonify({STATUS: NOK, "message": "Invalid payload format"}), 400
+
+  data = request.json
+
+  username = data["username"]
+  password = data["password"]
+
+  # Find this username
+  exists = checkUsernameAlreadyExists(username)
+  if not exists:
+    LOGGER.warning(f"Account delete failed - user not found: {username}")
+    return jsonify({STATUS: NOK, "message": f"Invalid username or password"}), 400
+
+  verified = verifyUsernamesPassword(username, password)
+  if not verified:
+    LOGGER.warning(f"Token delete failed - invalid password for: {username}")
+    return jsonify({STATUS: NOK, "message": "Invalid username or password"}), 401
+
+  res, code = deleteUser(username)
+  return jsonify(res), code
 
 
 def send_email(data):
