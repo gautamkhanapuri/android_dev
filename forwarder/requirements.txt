@@ -1,14 +1,27 @@
-requests==2.32.4
-sendgrid==6.11.0
-SQLAlchemy==2.0.40
-telebot==0.0.5
-Flask
-Flask==3.1.0
-Flask-Cors==5.0.1
-Flask-HTTPAuth==4.8.0
-Flask-SQLAlchemy==3.1.1
-gunicorn==23.0.0
-passlib==1.7.4
-itsdangerous==2.2.0
-resend==2.4.0
-Flask-Limiter
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database
+SQLAlchemy
+pydantic
+pydantic-settings
+
+# Telegram
+telebot
+
+# Email
+resend
+
+# Security & Authentication
+passlib
+bcrypt
+python-jose[cryptography]
+
+# Rate Limiting
+slowapi
+
+# Utilities
+dotenv
+requests
