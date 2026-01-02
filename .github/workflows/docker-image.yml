@@ -114,7 +114,7 @@ jobs:
         echo "Response: $RESPONSE"
         if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q '"token"' && echo "$RESPONSE" | grep -q '"message": "Registration successful"'; then
           # TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-          echo "REGISTER USER test passed!
+          echo "REGISTER USER test passed!"
         else
           echo "REGISTER USER test FAILED!"
           exit 1
