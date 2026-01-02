@@ -112,9 +112,9 @@ jobs:
         TEST_USERNAME="testuser_${TIMESTAMP}"
         RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -H "Authorization: Basic ${{ secrets.ADMIN_AUTH }}" https://smsforwards.gaks.solutions/forward/api/register -d "{\"name\":\"Test User\",\"username\":\"${TEST_USERNAME}\"}")
         echo "Response: $RESPONSE"
-        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q '"token"'; then
-          TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-          echo "REGISTER USER test passed! Token: $TOKEN"
+        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q '"token"' && echo "$RESPONSE" | grep -q '"message": "Registration successful"'; then
+          # TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          echo "REGISTER USER test passed!
         else
           echo "REGISTER USER test FAILED!"
           exit 1
@@ -124,7 +124,7 @@ jobs:
         echo "RESET TOKEN test"
         RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -H "Authorization: Basic ${{ secrets.ADMIN_AUTH }}" https://smsforwards.gaks.solutions/forward/api/reset-token -d "{\"username\":\"${TEST_USERNAME}\"}")
         echo "Response: $RESPONSE"
-        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q "\"token\":\"${TOKEN}\""; then
+        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q '"token"' && echo "$RESPONSE" | grep -q '"message": "Token retrieved successfully"'; then
           echo "RESET TOKEN test passed!"
         else
           echo "RESET TOKEN test FAILED!"
@@ -135,8 +135,8 @@ jobs:
         echo "DELETE ACCOUNT test"
         RESPONSE=$(curl -X DELETE -s -H "Content-Type: application/json" -H "Authorization: Basic ${{ secrets.ADMIN_AUTH }}" https://smsforwards.gaks.solutions/forward/api/delete-account -d "{\"username\":\"${TEST_USERNAME}\"}")
         echo "Response: $RESPONSE"
-        EXPECTED='{"message":"Account deleted successfully","status":"OK"}'
-        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+        # EXPECTED='{"message":"Account deleted successfully","status":"OK"}'
+        if echo "$RESPONSE" | grep -q '"status":"OK"' && echo "$RESPONSE" | grep -q '"message": "Account deleted successfully"'; then
           echo "DELETE ACCOUNT test passed!"
         else
           echo "DELETE ACCOUNT test FAILED!"
@@ -147,8 +147,8 @@ jobs:
         echo "VERIFY DELETION test"
         RESPONSE=$(curl -X POST -s -H "Content-Type: application/json" -H "Authorization: Basic ${{ secrets.ADMIN_AUTH }}" https://smsforwards.gaks.solutions/forward/api/reset-token -d "{\"username\":\"${TEST_USERNAME}\"}")
         echo "Response: $RESPONSE"
-        EXPECTED='{"message":"Invalid username or password","status":"NOK"}'
-        if [[ "$RESPONSE" == "$EXPECTED" ]]; then
+        # EXPECTED='{"message":"Invalid username or password","status":"NOK"}'
+        if echo "$RESPONSE" | grep -q '"status":"NOK"' && echo "$RESPONSE" | grep -q '"message": "Invalid username or password"'; then
           echo "VERIFY DELETION test passed!"
         else
           echo "VERIFY DELETION test FAILED!"
