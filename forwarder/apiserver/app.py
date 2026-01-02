@@ -22,7 +22,6 @@ def create_main():
     dbname.create_all()
     LOGGER.warning("Creating Dummy Users")
     # createUser("name", "username", "password")
-    createUser("ADMIN", "admin", "iIpLrCEleLoEb4vLwspKDeeyjTBe1EFr8EGcOli3rg8TajLGtXIbRXJALL7dNSrR")
     ctx.pop()
 
 
