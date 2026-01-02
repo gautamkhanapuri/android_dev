@@ -57,6 +57,16 @@ def verifyUsernamesPassword(username: str, password: str) -> bool:
   return isCorrect
 
 
+def updateUserPassword(username: str, password: str) -> None:
+  """
+  Updates the encrypted password in the databse
+  """
+  LOGGER.info(f"Updating password for username: {username}")
+  user = db.session.query(User).filter(User.username == username).first()
+  user.password = hash_password(password)
+  db.session.commit()
+
+
 def deleteUser(username: str) -> tuple[dict[str, str], int]:
   try:
     user = db.session.query(User).filter(User.username == username).first()

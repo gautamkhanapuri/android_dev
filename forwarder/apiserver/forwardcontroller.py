@@ -1,11 +1,10 @@
 """Forward controller for user apis and forwarding."""
-import os
 import datetime
-
 # Source - https://stackoverflow.com/a
 # Posted by Pedro Lobito
 # Retrieved 2025-11-08, License - CC BY-SA 4.0
-
+import string
+import secrets
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -16,13 +15,15 @@ from sendgrid.helpers.mail import *
 from flask import Blueprint, jsonify, g, request
 from api_init import auth, app, db, LOGGER, bot, limiter
 from utils import ERROR, OK, NOK, STATUS, JSONMIME
-from models.user import User, checkUsernameAlreadyExists, createUser, basicAuth, verifyUsernamesPassword, deleteUser
+from models.user import User, checkUsernameAlreadyExists, createUser, basicAuth, verifyUsernamesPassword, deleteUser, \
+  updateUserPassword
 from models.telegramuser import updateTelegramUser, getTelegramUser
 from models.forward import createForward
 
 # Define the blueprint: 'login'
 # MODFORWARD = Blueprint('forward', __name__, url_prefix=app.config['APIPREFIX'])
 MODFORWARD = Blueprint('forward', __name__)
+
 
 @MODFORWARD.route('/forward/api/version', methods=['POST', 'GET'])
 @auth.login_required
@@ -81,8 +82,20 @@ def forward_message():
     return jsonify({STATUS: OK, "message": "Message was forwarded"})
 
 
+def generate_strong_password(length=32) -> str:
+  """
+  Generate cryptographically strong random password
+  :param length: Length of the generated password
+  :return: The password
+  """
+  alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+  password = ''.join(secrets.choice(alphabet) for _ in range(length))
+  return password
+
+
 @MODFORWARD.route('/forward/api/register', methods=['POST'])
 @limiter.limit("6 per hour")
+@auth.login_required
 def register_user():
   """
   Registers a new user and sends token back.
@@ -93,18 +106,18 @@ def register_user():
   data = request.json
 
   # Validate presence of the three fields.
-  if not data.get("name") or not data.get("username") or not data.get("password"):
-    return jsonify({STATUS: NOK, "message": "Missing required fields: name, username, password"}), 400
+  if not data.get("name") or not data.get("username"):
+    return jsonify({STATUS: NOK, "message": "Missing required fields: name, username"}), 400
 
   name = data["name"]
   username = data["username"]
-  password = data["password"]
 
   exists = checkUsernameAlreadyExists(username)
   if exists:
     LOGGER.warning(f"Registration failed - username exists: {username}; name: {name}")
     return jsonify({STATUS: NOK, "message": f"Username {username} already exists. Pick a unique username."}), 400
 
+  password = generate_strong_password()
   try:
     user = createUser(name, username, password)
     if user:
@@ -121,6 +134,7 @@ def register_user():
 
 @MODFORWARD.route('/forward/api/reset-token', methods=['POST'])
 @limiter.limit("6 per hour")
+@auth.login_required
 def reset_token():
   """
   Retrieve forgotten token using username and password.
@@ -131,7 +145,6 @@ def reset_token():
   data = request.json
 
   username = data["username"]
-  password = data["password"]
 
   # Find this username
   exists = checkUsernameAlreadyExists(username)
@@ -139,17 +152,20 @@ def reset_token():
     LOGGER.warning(f"Token reset failed - user not found: {username}")
     return jsonify({STATUS: NOK, "message": f"Invalid username or password"}), 400
 
-  verified = verifyUsernamesPassword(username, password)
-  if not verified:
-    LOGGER.warning(f"Token reset failed - invalid password for: {username}")
-    return jsonify({STATUS: NOK, "message": "Invalid username or password"}), 401
-  token = basicAuth(username, password)
+  # verified = verifyUsernamesPassword(username, password)
+  # if not verified:
+  #   LOGGER.warning(f"Token reset failed - invalid password for: {username}")
+  #   return jsonify({STATUS: NOK, "message": "Invalid username or password"}), 401
+  new_password = generate_strong_password()
+  updateUserPassword(username, new_password)
+  token = basicAuth(username, new_password)
   LOGGER.info(f"Token reset successful for: {username}")
   return jsonify({STATUS: OK, "message": "Token retrieved successfully", "token": token}), 200
 
 
 @MODFORWARD.route('/forward/api/delete-account', methods=['DELETE'])
 @limiter.limit("6 per hour")
+@auth.login_required
 def delete_account():
   if "Content-Type" not in request.headers or request.headers["Content-Type"] != JSONMIME:
     return jsonify({STATUS: NOK, "message": "Invalid payload format"}), 400
@@ -157,7 +173,7 @@ def delete_account():
   data = request.json
 
   username = data["username"]
-  password = data["password"]
+  # password = data["password"]
 
   # Find this username
   exists = checkUsernameAlreadyExists(username)
@@ -165,24 +181,24 @@ def delete_account():
     LOGGER.warning(f"Account delete failed - user not found: {username}")
     return jsonify({STATUS: NOK, "message": f"Invalid username or password"}), 400
 
-  verified = verifyUsernamesPassword(username, password)
-  if not verified:
-    LOGGER.warning(f"Token delete failed - invalid password for: {username}")
-    return jsonify({STATUS: NOK, "message": "Invalid username or password"}), 401
+  # verified = verifyUsernamesPassword(username, password)
+  # if not verified:
+  #   LOGGER.warning(f"Token delete failed - invalid password for: {username}")
+  #   return jsonify({STATUS: NOK, "message": "Invalid username or password"}), 401
 
   res, code = deleteUser(username)
   return jsonify(res), code
 
 
-def send_email(data):
-    sg = sendgrid.SendGridAPIClient(api_key=app.config['SENDGRID'])
-    from_email = Email(app.config['FROMEMAIL'])
-    to_email = To(data['email'])
-    subject = "SMS Forward -  from: %s on %s " % (data['from'], datetime.datetime.now().strftime("%Y-%m-%d %H:%S"))
-    content = Content("text/plain", data['message'])
-    mail = Mail(from_email, to_email, subject, content)
-    response = sg.client.mail.send.post(request_body=mail.get())
-    LOGGER.info("Email send status: %d", response.status_code)
+# def send_email(data):
+#     sg = sendgrid.SendGridAPIClient(api_key=app.config['SENDGRID'])
+#     from_email = Email(app.config['FROMEMAIL'])
+#     to_email = To(data['email'])
+#     subject = "SMS Forward -  from: %s on %s " % (data['from'], datetime.datetime.now().strftime("%Y-%m-%d %H:%S"))
+#     content = Content("text/plain", data['message'])
+#     mail = Mail(from_email, to_email, subject, content)
+#     response = sg.client.mail.send.post(request_body=mail.get())
+#     LOGGER.info("Email send status: %d", response.status_code)
 
 
 def send_telegram(data):
@@ -231,29 +247,29 @@ def send_email_resend(data):
     raise
 
 
-def send_email_gmail(data):
-  gmailUser = app.config['FROMEMAIL']
-  gmailPassword = app.config['GMAILAPP']
-  recipient = data['email']
-  subject = "SMS Forward -  from: %s on %s " % (data['from'], datetime.datetime.now().strftime("%Y-%m-%d %H:%S"))
-
-  msg = MIMEMultipart()
-  msg['From'] = f'"SMS Forward " <{gmailUser}>'
-  msg['To'] = recipient
-  msg['Subject'] = subject
-  msg.attach(MIMEText(data['message']))
-
-  try:
-    mailServer = smtplib.SMTP('smtp.gmail.com', 587)
-    mailServer.ehlo()
-    mailServer.starttls()
-    mailServer.ehlo()
-    mailServer.login(gmailUser, gmailPassword)
-    mailServer.sendmail(gmailUser, recipient, msg.as_string())
-    mailServer.close()
-    print ('Email sent!')
-    LOGGER.info("Email sent successfully!")
-  except Exception as e:
-    LOGGER.info("Email send failed!!")
-    raise
+# def send_email_gmail(data):
+#   gmailUser = app.config['FROMEMAIL']
+#   gmailPassword = app.config['GMAILAPP']
+#   recipient = data['email']
+#   subject = "SMS Forward -  from: %s on %s " % (data['from'], datetime.datetime.now().strftime("%Y-%m-%d %H:%S"))
+#
+#   msg = MIMEMultipart()
+#   msg['From'] = f'"SMS Forward " <{gmailUser}>'
+#   msg['To'] = recipient
+#   msg['Subject'] = subject
+#   msg.attach(MIMEText(data['message']))
+#
+#   try:
+#     mailServer = smtplib.SMTP('smtp.gmail.com', 587)
+#     mailServer.ehlo()
+#     mailServer.starttls()
+#     mailServer.ehlo()
+#     mailServer.login(gmailUser, gmailPassword)
+#     mailServer.sendmail(gmailUser, recipient, msg.as_string())
+#     mailServer.close()
+#     print ('Email sent!')
+#     LOGGER.info("Email sent successfully!")
+#   except Exception as e:
+#     LOGGER.info("Email send failed!!")
+#     raise
 
